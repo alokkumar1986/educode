@@ -125,16 +125,20 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             <p className="text-muted-foreground">{profile?.email} • <span className="capitalize">{profile?.role}</span></p>
           </div>
         </div>
-        <Link to="/create" className={cn(buttonVariants(), "gap-2")}>
-          <PlusCircle className="w-4 h-4" /> Create New Course
-        </Link>
+        {(profile?.role === 'instructor' || profile?.role === 'admin') && (
+          <Link to="/create" className={cn(buttonVariants(), "gap-2")}>
+            <PlusCircle className="w-4 h-4" /> Create New Course
+          </Link>
+        )}
       </div>
 
-      <Tabs defaultValue="my-courses" className="w-full">
+      <Tabs defaultValue={profile?.role === 'student' ? 'learning' : 'my-courses'} className="w-full">
         <TabsList className="mb-8">
-          <TabsTrigger value="my-courses" className="gap-2">
-            <BookOpen className="w-4 h-4" /> My Courses
-          </TabsTrigger>
+          {(profile?.role === 'instructor' || profile?.role === 'admin') && (
+            <TabsTrigger value="my-courses" className="gap-2">
+              <BookOpen className="w-4 h-4" /> My Courses
+            </TabsTrigger>
+          )}
           <TabsTrigger value="learning" className="gap-2">
             <GraduationCap className="w-4 h-4" /> Learning Progress
           </TabsTrigger>

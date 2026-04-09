@@ -113,9 +113,11 @@ export default function App() {
                   <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                  <Link to="/create" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
-                    <PlusCircle className="w-4 h-4" /> Create
-                  </Link>
+                  {(profile?.role === 'instructor' || profile?.role === 'admin') && (
+                    <Link to="/create" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
+                      <PlusCircle className="w-4 h-4" /> Create
+                    </Link>
+                  )}
                 </>
               )}
             </nav>
@@ -167,9 +169,11 @@ export default function App() {
                       <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium">
                         <LayoutDashboard className="w-5 h-5" /> Dashboard
                       </Link>
-                      <Link to="/create" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium">
-                        <PlusCircle className="w-5 h-5" /> Create
-                      </Link>
+                      {(profile?.role === 'instructor' || profile?.role === 'admin') && (
+                        <Link to="/create" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium">
+                          <PlusCircle className="w-5 h-5" /> Create
+                        </Link>
+                      )}
                     </>
                   )}
                   <div className="pt-2 border-t">
@@ -195,8 +199,8 @@ export default function App() {
             <Route path="/explore" element={<CourseExplorer />} />
             <Route path="/course/:courseId" element={<CourseViewer />} />
             <Route path="/dashboard" element={<Dashboard user={user} profile={profile} />} />
-            <Route path="/create" element={<CreateCourse user={user} />} />
-            <Route path="/edit/:courseId" element={<CreateCourse user={user} />} />
+            <Route path="/create" element={<CreateCourse user={user} profile={profile} />} />
+            <Route path="/edit/:courseId" element={<CreateCourse user={user} profile={profile} />} />
             <Route path="/admin" element={<AdminPanel user={user} profile={profile} />} />
           </Routes>
         </main>

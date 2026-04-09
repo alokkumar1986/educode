@@ -4,7 +4,7 @@ import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { createCourse, updateCourse, addLesson, getLessons } from '../lib/firebase-utils';
-import { Course, Lesson, CATEGORIES, Category, Quiz, QuizQuestion } from '../types';
+import { Course, Lesson, CATEGORIES, Category, Quiz, QuizQuestion, UserProfile } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -32,9 +32,10 @@ import ReactMarkdown from 'react-markdown';
 
 interface CreateCourseProps {
   user: User | null;
+  profile: UserProfile | null;
 }
 
-export default function CreateCourse({ user }: CreateCourseProps) {
+export default function CreateCourse({ user, profile }: CreateCourseProps) {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(courseId ? true : false);
@@ -57,6 +58,12 @@ export default function CreateCourse({ user }: CreateCourseProps) {
   useEffect(() => {
     if (!user) {
       navigate('/');
+      return;
+    }
+
+    if (profile && profile.role === 'student') {
+      toast.error("Access denied. Only instructors can create courses.");
+      navigate('/dashboard');
       return;
     }
 

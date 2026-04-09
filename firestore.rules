@@ -70,6 +70,11 @@ service cloud.firestore {
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
          (request.auth.token.email == "alok.nayak@iserveu.in" && request.auth.token.email_verified == true));
     }
+
+    function isInstructor() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor' || isAdmin());
+    }
     
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'createdAt']) &&
@@ -118,17 +123,17 @@ service cloud.firestore {
 
     match /courses/{courseId} {
       allow read: if resource.data.published == true || (isAuthenticated() && resource.data.instructorId == request.auth.uid) || isAdmin();
-      allow create: if isAuthenticated() && isValidCourse(request.resource.data);
-      allow update: if (isAuthenticated() && resource.data.instructorId == request.auth.uid && isValidCourse(request.resource.data)) || isAdmin();
-      allow delete: if (isAuthenticated() && resource.data.instructorId == request.auth.uid) || isAdmin();
+      allow create: if isInstructor() && isValidCourse(request.resource.data);
+      allow update: if (isInstructor() && resource.data.instructorId == request.auth.uid && isValidCourse(request.resource.data)) || isAdmin();
+      allow delete: if (isInstructor() && resource.data.instructorId == request.auth.uid) || isAdmin();
       
       match /lessons/{lessonId} {
         allow read: if get(/databases/$(database)/documents/courses/$(courseId)).data.published == true || 
                      (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || 
                      isAdmin();
-        allow create: if isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data);
-        allow update: if (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data)) || isAdmin();
-        allow delete: if (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || isAdmin();
+        allow create: if isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data);
+        allow update: if (isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data)) || isAdmin();
+        allow delete: if (isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || isAdmin();
       }
     }
   }
