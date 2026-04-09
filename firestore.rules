@@ -1,0 +1,135 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (required)
+    //   - photoURL: string (optional)
+    //   - role: string (required, ['student', 'instructor', 'admin'])
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: courses
+    // Document ID: {courseId}
+    // Fields:
+    //   - title: string (required, size < 100)
+    //   - description: string (required, size < 2000)
+    //   - category: string (required)
+    //   - instructorId: string (required)
+    //   - instructorName: string (required)
+    //   - instructorPhoto: string (optional)
+    //   - published: bool (required)
+    //   - lessonCount: number (required)
+    //   - thumbnail: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
+    // Collection: courses/{courseId}/lessons
+    // Document ID: {lessonId}
+    // Fields:
+    //   - title: string (required, size < 100)
+    //   - content: string (required, size < 50000)
+    //   - order: number (required)
+    //   - courseId: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // Collection: progress
+    // Document ID: {userId}_{courseId}
+    // Fields:
+    //   - userId: string (required)
+    //   - courseId: string (required)
+    //   - completedLessons: list (required)
+    //   - lastAccessedAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "alok.nayak@iserveu.in" && request.auth.token.email_verified == true));
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.role in ['student', 'instructor', 'admin'] &&
+             data.displayName is string && data.displayName.size() < 100;
+    }
+    
+    function isValidCourse(data) {
+      return data.keys().hasAll(['title', 'description', 'category', 'instructorId', 'published', 'lessonCount']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.description is string && data.description.size() < 2000 &&
+             data.instructorId == request.auth.uid;
+    }
+    
+    function isValidLesson(data) {
+      return data.keys().hasAll(['title', 'content', 'order', 'courseId']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.content is string && data.content.size() < 50000 &&
+             data.order is number;
+    }
+
+    function isValidProgress(data) {
+      return data.keys().hasAll(['userId', 'courseId', 'completedLessons', 'lastAccessedAt']) &&
+             data.userId == request.auth.uid &&
+             data.completedLessons is list;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'student';
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /progress/{progressId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidProgress(request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && isValidProgress(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /courses/{courseId} {
+      allow read: if resource.data.published == true || (isAuthenticated() && resource.data.instructorId == request.auth.uid) || isAdmin();
+      allow create: if isAuthenticated() && isValidCourse(request.resource.data);
+      allow update: if (isAuthenticated() && resource.data.instructorId == request.auth.uid && isValidCourse(request.resource.data)) || isAdmin();
+      allow delete: if (isAuthenticated() && resource.data.instructorId == request.auth.uid) || isAdmin();
+      
+      match /lessons/{lessonId} {
+        allow read: if get(/databases/$(database)/documents/courses/$(courseId)).data.published == true || 
+                     (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || 
+                     isAdmin();
+        allow create: if isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data);
+        allow update: if (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data)) || isAdmin();
+        allow delete: if (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || isAdmin();
+      }
+    }
+  }
+}

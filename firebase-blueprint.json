@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Public and private information about a user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "displayName": { "type": "string", "description": "User's display name." },
+        "photoURL": { "type": "string", "description": "URL to user's profile photo." },
+        "role": { "type": "string", "enum": ["student", "instructor", "admin"], "description": "User's role in the platform." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." },
+        "enrolledCourses": { "type": "array", "items": { "type": "string" }, "description": "IDs of courses the user is enrolled in." }
+      },
+      "required": ["uid", "email", "displayName", "role", "createdAt"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "An educational course containing multiple lessons.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the course." },
+        "description": { "type": "string", "description": "Detailed description of the course." },
+        "category": { "type": "string", "description": "Technology category (e.g., HTML, CSS)." },
+        "instructorId": { "type": "string", "description": "UID of the instructor who created the course." },
+        "instructorName": { "type": "string", "description": "Name of the instructor." },
+        "instructorPhoto": { "type": "string", "description": "Photo URL of the instructor." },
+        "published": { "type": "boolean", "description": "Whether the course is visible to everyone." },
+        "lessonCount": { "type": "number", "description": "Number of lessons in the course." },
+        "thumbnail": { "type": "string", "description": "URL to course thumbnail image." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the course was created." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the course was last updated." }
+      },
+      "required": ["title", "description", "category", "instructorId", "published", "lessonCount", "createdAt", "updatedAt"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A single lesson within a course.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the lesson." },
+        "content": { "type": "string", "description": "Markdown content of the lesson." },
+        "quiz": { "type": "object", "description": "Optional quiz for the lesson." },
+        "order": { "type": "number", "description": "The sequence order of the lesson." },
+        "courseId": { "type": "string", "description": "ID of the parent course." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the lesson was created." }
+      },
+      "required": ["title", "content", "order", "courseId", "createdAt"]
+    },
+    "UserProgress": {
+      "title": "User Progress",
+      "description": "Tracks a user's progress in a specific course.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user." },
+        "courseId": { "type": "string", "description": "ID of the course." },
+        "completedLessons": { "type": "array", "items": { "type": "string" }, "description": "IDs of completed lessons." },
+        "lastAccessedAt": { "type": "string", "format": "date-time", "description": "When the user last accessed the course." }
+      },
+      "required": ["userId", "courseId", "completedLessons", "lastAccessedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Course documents."
+    },
+    "/courses/{courseId}/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Lesson documents within a course."
+    },
+    "/progress/{progressId}": {
+      "schema": "UserProgress",
+      "description": "User progress tracking documents. ID is usually userId_courseId."
+    }
+  }
+}
