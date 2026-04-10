@@ -131,7 +131,7 @@ service cloud.firestore {
         allow read: if get(/databases/$(database)/documents/courses/$(courseId)).data.published == true || 
                      (isAuthenticated() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || 
                      isAdmin();
-        allow create: if isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data);
+        allow create: if (isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data)) || isAdmin();
         allow update: if (isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid && isValidLesson(request.resource.data)) || isAdmin();
         allow delete: if (isInstructor() && get(/databases/$(database)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) || isAdmin();
       }

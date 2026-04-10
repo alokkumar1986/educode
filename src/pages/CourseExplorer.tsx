@@ -8,7 +8,6 @@ import { cn } from '../lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Search, Filter, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export default function CourseExplorer() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,12 +115,7 @@ export default function CourseExplorer() {
           ) : filteredCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredCourses.map((course) => (
-                <motion.div
-                  key={course.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <div key={course.id}>
                   <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
                     <div className="aspect-video bg-muted relative overflow-hidden">
                       <img 
@@ -157,7 +151,7 @@ export default function CourseExplorer() {
                       </Link>
                     </CardFooter>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           ) : (

@@ -33,7 +33,6 @@ import {
   DropdownMenuTrigger 
 } from '../components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { motion } from 'motion/react';
 
 interface DashboardProps {
   user: User | null;
@@ -179,9 +178,8 @@ export default function Dashboard({ user, profile }: DashboardProps) {
                           <span className="font-medium">{percent}%</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percent}%` }}
+                          <div 
+                            style={{ width: `${percent}%` }}
                             className="bg-primary h-full"
                           />
                         </div>

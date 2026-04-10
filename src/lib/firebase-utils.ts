@@ -182,8 +182,13 @@ export const getMyCourses = (uid: string, callback: (courses: Course[]) => void)
 export const createCourse = async (courseData: Partial<Course>): Promise<string> => {
   const path = 'courses';
   try {
+    // Safeguard: Remove any undefined values
+    const cleanedData = Object.fromEntries(
+      Object.entries(courseData).filter(([_, v]) => v !== undefined)
+    );
+
     const docRef = await addDoc(collection(db, 'courses'), {
-      ...courseData,
+      ...cleanedData,
       published: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -200,8 +205,14 @@ export const updateCourse = async (courseId: string, courseData: Partial<Course>
   const path = `courses/${courseId}`;
   try {
     const docRef = doc(db, 'courses', courseId);
+    
+    // Safeguard: Remove any undefined values
+    const cleanedData = Object.fromEntries(
+      Object.entries(courseData).filter(([_, v]) => v !== undefined)
+    );
+
     await updateDoc(docRef, {
-      ...courseData,
+      ...cleanedData,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -269,20 +280,72 @@ export const addLesson = async (courseId: string, lessonData: Partial<Lesson>) =
   const path = `courses/${courseId}/lessons`;
   try {
     const lessonsRef = collection(db, 'courses', courseId, 'lessons');
+    
+    // Safeguard: Remove any undefined values that Firestore doesn't support
+    const cleanedData = Object.fromEntries(
+      Object.entries(lessonData).filter(([_, v]) => v !== undefined)
+    );
+
     await addDoc(lessonsRef, {
-      ...lessonData,
+      ...cleanedData,
       courseId,
       createdAt: serverTimestamp(),
     });
     
-    // Update lesson count in course
+    // Update lesson count and updatedAt in course
     const courseRef = doc(db, 'courses', courseId);
     const courseSnap = await getDoc(courseRef);
     if (courseSnap.exists()) {
       const currentCount = courseSnap.data().lessonCount || 0;
-      await updateDoc(courseRef, { lessonCount: currentCount + 1 });
+      await updateDoc(courseRef, { 
+        lessonCount: currentCount + 1,
+        updatedAt: serverTimestamp()
+      });
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
+    throw error;
+  }
+};
+
+export const updateLesson = async (courseId: string, lessonId: string, lessonData: Partial<Lesson>) => {
+  const path = `courses/${courseId}/lessons/${lessonId}`;
+  try {
+    const lessonRef = doc(db, 'courses', courseId, 'lessons', lessonId);
+    
+    const cleanedData = Object.fromEntries(
+      Object.entries(lessonData).filter(([_, v]) => v !== undefined)
+    );
+
+    await updateDoc(lessonRef, {
+      ...cleanedData,
+      updatedAt: serverTimestamp(),
+    });
+
+    const courseRef = doc(db, 'courses', courseId);
+    await updateDoc(courseRef, { updatedAt: serverTimestamp() });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+    throw error;
+  }
+};
+
+export const deleteLesson = async (courseId: string, lessonId: string) => {
+  const path = `courses/${courseId}/lessons/${lessonId}`;
+  try {
+    await deleteDoc(doc(db, 'courses', courseId, 'lessons', lessonId));
+    
+    const courseRef = doc(db, 'courses', courseId);
+    const courseSnap = await getDoc(courseRef);
+    if (courseSnap.exists()) {
+      const currentCount = courseSnap.data().lessonCount || 0;
+      await updateDoc(courseRef, { 
+        lessonCount: Math.max(0, currentCount - 1),
+        updatedAt: serverTimestamp()
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+    throw error;
   }
 };

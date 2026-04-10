@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'motion/react';
 
 // Pages
 import Home from './pages/Home';
@@ -76,12 +75,9 @@ export default function App() {
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
+        <div className="animate-spin">
           <Code2 className="w-12 h-12 text-primary" />
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -147,15 +143,9 @@ export default function App() {
           </div>
 
           {/* Mobile Nav */}
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="md:hidden border-b bg-background"
-              >
-                <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+          {isMenuOpen && (
+            <div className="md:hidden border-b bg-background">
+              <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
                   <Link to="/explore" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium">
                     <Search className="w-5 h-5" /> Explore
                   </Link>
@@ -188,9 +178,8 @@ export default function App() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </header>
 
         <main className="flex-1">

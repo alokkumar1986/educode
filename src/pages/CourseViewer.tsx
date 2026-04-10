@@ -24,9 +24,6 @@ import {
   Circle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 
 export default function CourseViewer() {
@@ -130,70 +127,64 @@ export default function CourseViewer() {
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden">
       {/* Sidebar */}
-      <AnimatePresence mode="wait">
-        {isSidebarOpen && (
-          <motion.aside 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="border-r bg-muted/20 flex flex-col shrink-0"
-          >
-            <div className="p-4 border-b bg-background">
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline">{course.category}</Badge>
-                <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-              </div>
-              <h2 className="font-bold line-clamp-2">{course.title}</h2>
+      {isSidebarOpen && (
+        <aside 
+          className="border-r bg-muted/20 flex flex-col shrink-0 w-80"
+        >
+          <div className="p-4 border-b bg-background">
+            <div className="flex items-center justify-between mb-2">
+              <Badge variant="outline">{course.category}</Badge>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
             </div>
-            <ScrollArea className="flex-1">
-              <div className="p-2">
-                {lessons.map((lesson, index) => {
-                  const isCompleted = progress?.completedLessons.includes(lesson.id);
-                  return (
-                    <button
-                      key={lesson.id}
-                      onClick={() => {
-                        setCurrentLessonIndex(index);
-                        setQuizAnswers({});
-                        setQuizSubmitted(false);
-                      }}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors mb-1 ${
-                        currentLessonIndex === index 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'hover:bg-muted'
-                      }`}
-                    >
-                      <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs border ${
-                        currentLessonIndex === index ? 'border-primary-foreground/30' : 'border-muted-foreground/30'
-                      }`}>
-                        {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
-                      </div>
-                      <span className="text-sm font-medium line-clamp-1">{lesson.title}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-            <div className="p-4 border-t bg-background">
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="font-medium">Your Progress</span>
-                <span className="text-muted-foreground">
-                  {Math.round(((progress?.completedLessons.length || 0) / lessons.length) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((progress?.completedLessons.length || 0) / lessons.length) * 100}%` }}
-                  className="bg-primary h-full"
-                />
-              </div>
+            <h2 className="font-bold line-clamp-2">{course.title}</h2>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-2">
+              {lessons.map((lesson, index) => {
+                const isCompleted = progress?.completedLessons.includes(lesson.id);
+                return (
+                  <button
+                    key={lesson.id}
+                    onClick={() => {
+                      setCurrentLessonIndex(index);
+                      setQuizAnswers({});
+                      setQuizSubmitted(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors mb-1 ${
+                      currentLessonIndex === index 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs border ${
+                      currentLessonIndex === index ? 'border-primary-foreground/30' : 'border-muted-foreground/30'
+                    }`}>
+                      {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
+                    </div>
+                    <span className="text-sm font-medium line-clamp-1">{lesson.title}</span>
+                  </button>
+                );
+              })}
             </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+          </ScrollArea>
+          <div className="p-4 border-t bg-background">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="font-medium">Your Progress</span>
+              <span className="text-muted-foreground">
+                {Math.round(((progress?.completedLessons.length || 0) / lessons.length) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+              <div 
+                style={{ width: `${((progress?.completedLessons.length || 0) / lessons.length) * 100}%` }}
+                className="bg-primary h-full"
+              />
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -246,11 +237,8 @@ export default function CourseViewer() {
         <ScrollArea className="flex-1">
           <div className="max-w-4xl mx-auto px-8 py-12">
             {currentLesson ? (
-              <motion.div
+              <div
                 key={currentLesson.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
                 className="prose prose-slate dark:prose-invert max-w-none"
               >
                 <h1 className="text-3xl font-bold mb-8">{currentLesson.title}</h1>
@@ -258,19 +246,7 @@ export default function CourseViewer() {
                   <ReactMarkdown
                     components={{
                       code({ node, inline, className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                          <div className="my-6 rounded-lg overflow-hidden border">
-                            <SyntaxHighlighter
-                              style={vscDarkPlus}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          </div>
-                        ) : (
+                        return (
                           <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm" {...props}>
                             {children}
                           </code>
@@ -389,7 +365,7 @@ export default function CourseViewer() {
                     </Button>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ) : (
               <div className="text-center py-20">
                 <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />

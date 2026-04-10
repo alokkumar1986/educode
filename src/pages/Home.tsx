@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   ChevronRight
 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export default function Home() {
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
@@ -56,11 +55,7 @@ export default function Home() {
         </div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div>
               <Badge variant="outline" className="mb-4 px-4 py-1 border-primary/20 bg-primary/5 text-primary">
                 The Future of Web Learning
               </Badge>
@@ -80,7 +75,7 @@ export default function Home() {
                   Create a Course
                 </Link>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -119,12 +114,8 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
                 className="p-8 rounded-2xl border bg-card hover:shadow-lg transition-shadow"
               >
                 <div className="mb-6 p-3 bg-primary/5 rounded-xl inline-block">
@@ -134,7 +125,7 @@ export default function Home() {
                 <p className="text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

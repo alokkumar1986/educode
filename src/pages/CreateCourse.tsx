@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { createCourse, updateCourse, addLesson, getLessons } from '../lib/firebase-utils';
+import { createCourse, updateCourse, addLesson, getLessons, updateLesson, deleteLesson } from '../lib/firebase-utils';
 import { Course, Lesson, CATEGORIES, Category, Quiz, QuizQuestion, UserProfile } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -11,6 +11,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Separator } from '../components/ui/separator';
+import CodePlayground from '../components/CodePlayground';
 import { 
   PlusCircle, 
   Save, 
@@ -25,7 +26,9 @@ import {
   ChevronUp,
   ChevronDown,
   Edit,
-  HelpCircle
+  HelpCircle,
+  Code2,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -50,10 +53,12 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
   // Lessons State
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [newLessonTitle, setNewLessonTitle] = useState('');
   const [newLessonContent, setNewLessonContent] = useState('');
   const [newLessonQuiz, setNewLessonQuiz] = useState<Quiz>({ questions: [] });
   const [previewMode, setPreviewMode] = useState(false);
+  const [showPlayground, setShowPlayground] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -135,21 +140,55 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
 
     setSaving(true);
     try {
-      await addLesson(courseId, {
+      const lessonData: any = {
         title: newLessonTitle,
         content: newLessonContent,
-        quiz: newLessonQuiz.questions.length > 0 ? newLessonQuiz : undefined,
-        order: lessons.length + 1,
-      });
-      toast.success("Lesson added!");
+        order: editingLessonId ? lessons.find(l => l.id === editingLessonId)?.order : lessons.length + 1,
+      };
+
+      if (newLessonQuiz.questions.length > 0) {
+        lessonData.quiz = newLessonQuiz;
+      }
+
+      if (editingLessonId) {
+        await updateLesson(courseId, editingLessonId, lessonData);
+        toast.success("Lesson updated!");
+      } else {
+        await addLesson(courseId, lessonData);
+        toast.success("Lesson added!");
+      }
+
       setNewLessonTitle('');
       setNewLessonContent('');
       setNewLessonQuiz({ questions: [] });
       setIsAddingLesson(false);
-    } catch (error) {
-      toast.error("Failed to add lesson");
+      setEditingLessonId(null);
+    } catch (error: any) {
+      console.error("Error saving lesson:", error);
+      const errorMsg = error.message ? error.message : "Failed to save lesson";
+      toast.error(`Failed to save lesson: ${errorMsg}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEditLesson = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
+    setNewLessonTitle(lesson.title);
+    setNewLessonContent(lesson.content);
+    setNewLessonQuiz(lesson.quiz || { questions: [] });
+    setIsAddingLesson(true);
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (!courseId) return;
+    if (!window.confirm("Are you sure you want to delete this lesson?")) return;
+
+    try {
+      await deleteLesson(courseId, lessonId);
+      toast.success("Lesson deleted");
+    } catch (error) {
+      toast.error("Failed to delete lesson");
     }
   };
 
@@ -293,9 +332,8 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
                     <span className="text-xs font-mono text-muted-foreground w-4">{index + 1}</span>
                     <span className="text-sm font-medium flex-1 line-clamp-1">{lesson.title}</span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7"><ChevronUp className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"><ChevronDown className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditLesson(lesson)}><Edit className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
                   </div>
                 ))}
@@ -313,10 +351,20 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <div>
-                      <CardTitle>New Lesson</CardTitle>
-                      <CardDescription>Add a new lesson to your course using Markdown.</CardDescription>
+                      <CardTitle>{editingLessonId ? 'Edit Lesson' : 'New Lesson'}</CardTitle>
+                      <CardDescription>
+                        {editingLessonId ? 'Update your lesson content and quiz.' : 'Add a new lesson to your course using Markdown.'}
+                      </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button 
+                        variant={showPlayground ? "default" : "outline"} 
+                        size="sm" 
+                        onClick={() => setShowPlayground(!showPlayground)}
+                        className="gap-2"
+                      >
+                        <Code2 className="w-4 h-4" /> Playground
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => setPreviewMode(!previewMode)}>
                         {previewMode ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                         {previewMode ? 'Edit' : 'Preview'}
@@ -324,6 +372,14 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {showPlayground && (
+                      <div className="mb-6">
+                        <CodePlayground className="h-[400px]" />
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          Use this playground to test code snippets before adding them to your lesson content.
+                        </p>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Lesson Title</label>
                       <Input 
@@ -402,10 +458,16 @@ export default function CreateCourse({ user, profile }: CreateCourseProps) {
                     </div>
                   </CardContent>
                   <CardFooter className="border-t pt-6 flex justify-end gap-3">
-                    <Button variant="ghost" onClick={() => setIsAddingLesson(false)}>Cancel</Button>
+                    <Button variant="ghost" onClick={() => {
+                      setIsAddingLesson(false);
+                      setEditingLessonId(null);
+                      setNewLessonTitle('');
+                      setNewLessonContent('');
+                      setNewLessonQuiz({ questions: [] });
+                    }}>Cancel</Button>
                     <Button onClick={handleAddLesson} disabled={saving} className="gap-2">
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-                      Add Lesson to Course
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingLessonId ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />)}
+                      {editingLessonId ? 'Update Lesson' : 'Add Lesson to Course'}
                     </Button>
                   </CardFooter>
                 </Card>
